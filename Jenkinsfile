@@ -13,15 +13,13 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                script {
-                    echo "Deploying branch: ${env.BRANCH_NAME}"
-                    echo "Repository URL: ${env.GIT_URL}"
-                }
-                sshagent(['your-ssh-credential-id']) { // Replace with your Jenkins SSH Credential ID
+                withCredentials([usernamePassword(credentialsId: 'ssh-password-root-142.93.222.67', 
+                                                usernameVariable: 'SSH_USER', 
+                                                passwordVariable: 'SSH_PASS')]) {
                     sh """
-                    ssh ${DEPLOY_USER}@${DEPLOY_SERVER} 'mkdir -p ${DEPLOY_PATH}'
-                    scp target/*.jar ${DEPLOY_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/app.jar
-                    ssh ${DEPLOY_USER}@${DEPLOY_SERVER} 'nohup java -jar ${DEPLOY_PATH}/app.jar > ${DEPLOY_PATH}/app.log 2>&1 &'
+                    sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no ${SSH_USER}@${DEPLOY_SERVER} 'mkdir -p ${DEPLOY_PATH}'
+                    sshpass -p "$SSH_PASS" scp target/*.jar ${SSH_USER}@${DEPLOY_SERVER}:${DEPLOY_PATH}/app.jar
+                    sshpass -p "$SSH_PASS" ssh -o StrictHostKeyChecking=no ${SSH_USER}@${DEPLOY_SERVER} 'nohup java -jar ${DEPLOY_PATH}/app.jar > ${DEPLOY_PATH}/app.log 2>&1 &'
                     """
                 }
             }
